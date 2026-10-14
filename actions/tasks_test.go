@@ -28,6 +28,44 @@ func (as *ActionSuite) Test_TasksIndex_ListsTasks() {
 	as.Contains(body, "Llamar al gestor")
 	as.Contains(body, "Publicar la oferta de empleo")
 	as.Contains(body, "Completada")
+	as.Contains(body, "Pendientes")
+	as.Contains(body, "Tareas completadas")
+	as.NotContains(body, "data-completed-section hidden")
+
+	heading := strings.Index(body, `id="completed-heading"`)
+	as.True(heading > 0)
+	as.Less(strings.Index(body, "Comprar material de oficina"), heading)
+	as.Less(strings.Index(body, "Llamar al gestor"), heading)
+	as.Greater(strings.Index(body, "Publicar la oferta de empleo"), heading)
+}
+
+func (as *ActionSuite) Test_TasksIndex_HidesCompletedSectionWhenNone() {
+	task := &models.Task{Title: "Solo pendiente"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	body := res.Body.String()
+	as.Contains(body, "data-completed-section hidden")
+	as.Contains(body, "data-pending-empty hidden")
+}
+
+func (as *ActionSuite) Test_TasksIndex_AllCompleted() {
+	task := &models.Task{Title: "Ya terminada", Completed: true}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	body := res.Body.String()
+	as.Contains(body, "data-pending-empty >No tienes tareas pendientes.")
+	as.NotContains(body, "data-completed-section hidden")
+	as.Greater(strings.Index(body, "Ya terminada"), strings.Index(body, `id="completed-heading"`))
 }
 
 func (as *ActionSuite) Test_TasksCreate_Valid() {
@@ -379,4 +417,29 @@ func (as *ActionSuite) Test_TasksToggle_KeepsPriority() {
 	as.NoError(as.DB.Reload(task))
 	as.True(task.Completed)
 	as.Equal(models.PriorityHigh, task.Priority)
+}
+
+func (as *ActionSuite) Test_TasksIndex_SectionsOrderByPriority() {
+	for _, t := range []*models.Task{
+		{Title: "Pendiente baja", Priority: models.PriorityLow},
+		{Title: "Completada media", Priority: models.PriorityMedium, Completed: true},
+		{Title: "Completada alta", Priority: models.PriorityHigh, Completed: true},
+	} {
+		verrs, err := as.DB.ValidateAndCreate(t)
+		as.NoError(err)
+		as.False(verrs.HasAny())
+	}
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	body := res.Body.String()
+	pendingLow := strings.Index(body, "Pendiente baja")
+	heading := strings.Index(body, `id="completed-heading"`)
+	completedHigh := strings.Index(body, "Completada alta")
+	completedMedium := strings.Index(body, "Completada media")
+	as.True(pendingLow >= 0 && heading >= 0 && completedHigh >= 0 && completedMedium >= 0)
+	as.True(pendingLow < heading, "las pendientes van antes del apartado de completadas")
+	as.True(heading < completedHigh, "una completada de prioridad alta va en completadas")
+	as.True(completedHigh < completedMedium, "dentro de completadas se ordena por prioridad")
 }

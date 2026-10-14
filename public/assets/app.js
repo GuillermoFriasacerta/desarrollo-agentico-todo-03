@@ -12,8 +12,11 @@ document.addEventListener("submit", function (event) {
   event.preventDefault();
 
   var task = form.closest(".task");
+  var originalList = task.parentNode;
+  var originalNext = task.nextSibling;
   var completed = !task.classList.contains("task-completed");
   applyState(task, form, completed);
+  moveTask(task, completed);
 
   fetch(form.action, {
     method: "POST",
@@ -26,6 +29,8 @@ document.addEventListener("submit", function (event) {
     }
   }).catch(function () {
     applyState(task, form, !completed);
+    originalList.insertBefore(task, originalNext);
+    refreshSections();
   });
 });
 
@@ -47,5 +52,37 @@ function applyState(task, form, completed) {
     task.insertBefore(status, task.querySelector(".task-actions"));
   } else if (!completed && status) {
     status.remove();
+  }
+}
+
+function moveTask(task, completed) {
+  var list = document.querySelector(completed ? "[data-completed-list]" : "[data-pending-list]");
+  if (!list) {
+    return;
+  }
+  // Mismo orden que el servidor: prioridad descendente y, a igualdad, antigüedad.
+  var priority = Number(task.dataset.priority);
+  var created = Number(task.dataset.created);
+  var next = Array.prototype.find.call(list.children, function (item) {
+    if (item === task) {
+      return false;
+    }
+    var itemPriority = Number(item.dataset.priority);
+    return itemPriority < priority || (itemPriority === priority && Number(item.dataset.created) > created);
+  });
+  list.insertBefore(task, next || null);
+  refreshSections();
+}
+
+function refreshSections() {
+  var pendingList = document.querySelector("[data-pending-list]");
+  var completedList = document.querySelector("[data-completed-list]");
+  var pendingEmpty = document.querySelector("[data-pending-empty]");
+  var completedSection = document.querySelector("[data-completed-section]");
+  if (pendingEmpty && pendingList) {
+    pendingEmpty.hidden = pendingList.children.length > 0;
+  }
+  if (completedSection && completedList) {
+    completedSection.hidden = completedList.children.length === 0;
   }
 }

@@ -1,0 +1,2 @@
+sql("ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_priority_range")
+drop_column("tasks", "priority")

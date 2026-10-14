@@ -2,6 +2,7 @@ package actions
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"todo/models"
@@ -11,17 +12,21 @@ import (
 	"github.com/gobuffalo/validate/v3"
 )
 
+// tasksOrder ordena por prioridad descendente y, dentro de cada nivel, por antigüedad.
+const tasksOrder = "priority desc, created_at asc, id asc"
+
 // TasksIndex muestra la lista de tareas y el formulario de creación.
 func TasksIndex(c buffalo.Context) error {
 	tx := c.Value("tx").(*pop.Connection)
 
 	tasks := models.Tasks{}
-	if err := tx.Order("created_at asc, id asc").All(&tasks); err != nil {
+	if err := tx.Order(tasksOrder).All(&tasks); err != nil {
 		return err
 	}
 
 	c.Set("tasks", tasks)
 	c.Set("task", &models.Task{})
+	c.Set("selectedPriority", "")
 	c.Set("errors", validate.NewErrors())
 	return c.Render(http.StatusOK, r.HTML("tasks/index.plush.html"))
 }
@@ -30,25 +35,37 @@ func TasksIndex(c buffalo.Context) error {
 func TasksCreate(c buffalo.Context) error {
 	tx := c.Value("tx").(*pop.Connection)
 
-	task := &models.Task{}
-	if err := c.Bind(task); err != nil {
+	input := struct {
+		Title    string `form:"title" json:"title"`
+		Priority string `form:"priority" json:"priority"`
+	}{}
+	if err := c.Bind(&input); err != nil {
 		return err
 	}
-	task.Title = strings.TrimSpace(task.Title)
+	task := &models.Task{Title: strings.TrimSpace(input.Title)}
 
-	verrs, err := tx.ValidateAndCreate(task)
+	var verrs *validate.Errors
+	var err error
+	if priority, ok := models.ParsePriority(input.Priority); ok {
+		task.Priority = priority
+		verrs, err = tx.ValidateAndCreate(task)
+	} else {
+		verrs, err = task.Validate(tx)
+		verrs.Add("priority", models.PriorityRequiredMessage)
+	}
 	if err != nil {
 		return err
 	}
 
 	if verrs.HasAny() {
 		tasks := models.Tasks{}
-		if err := tx.Order("created_at asc, id asc").All(&tasks); err != nil {
+		if err := tx.Order(tasksOrder).All(&tasks); err != nil {
 			return err
 		}
 
 		c.Set("tasks", tasks)
 		c.Set("task", task)
+		c.Set("selectedPriority", input.Priority)
 		c.Set("errors", verrs)
 		return c.Render(http.StatusUnprocessableEntity, r.HTML("tasks/index.plush.html"))
 	}
@@ -67,11 +84,12 @@ func TasksEdit(c buffalo.Context) error {
 	}
 
 	c.Set("task", task)
+	c.Set("selectedPriority", strconv.Itoa(task.Priority))
 	c.Set("errors", validate.NewErrors())
 	return c.Render(http.StatusOK, r.HTML("tasks/edit.plush.html"))
 }
 
-// TasksUpdate actualiza solo el título, conservando los demás datos de la tarea.
+// TasksUpdate actualiza el título y la prioridad, conservando los demás datos de la tarea.
 func TasksUpdate(c buffalo.Context) error {
 	tx := c.Value("tx").(*pop.Connection)
 
@@ -81,19 +99,29 @@ func TasksUpdate(c buffalo.Context) error {
 	}
 
 	input := struct {
-		Title string `form:"title" json:"title"`
+		Title    string `form:"title" json:"title"`
+		Priority string `form:"priority" json:"priority"`
 	}{}
 	if err := c.Bind(&input); err != nil {
 		return err
 	}
 	task.Title = strings.TrimSpace(input.Title)
 
-	verrs, err := tx.ValidateAndUpdate(task)
+	var verrs *validate.Errors
+	var err error
+	if priority, ok := models.ParsePriority(input.Priority); ok {
+		task.Priority = priority
+		verrs, err = tx.ValidateAndUpdate(task)
+	} else {
+		verrs, err = task.Validate(tx)
+		verrs.Add("priority", models.PriorityRequiredMessage)
+	}
 	if err != nil {
 		return err
 	}
 	if verrs.HasAny() {
 		c.Set("task", task)
+		c.Set("selectedPriority", input.Priority)
 		c.Set("errors", verrs)
 		return c.Render(http.StatusUnprocessableEntity, r.HTML("tasks/edit.plush.html"))
 	}

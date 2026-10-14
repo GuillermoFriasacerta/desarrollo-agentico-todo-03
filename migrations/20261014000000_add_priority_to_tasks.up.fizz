@@ -1,0 +1,2 @@
+add_column("tasks", "priority", "integer", {"default": 0})
+sql("ALTER TABLE tasks ADD CONSTRAINT tasks_priority_range CHECK (priority BETWEEN 0 AND 3)")

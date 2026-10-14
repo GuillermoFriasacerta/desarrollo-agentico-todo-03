@@ -60,9 +60,15 @@ function moveTask(task, completed) {
   if (!list) {
     return;
   }
+  // Mismo orden que el servidor: prioridad descendente y, a igualdad, antigüedad.
+  var priority = Number(task.dataset.priority);
   var created = Number(task.dataset.created);
   var next = Array.prototype.find.call(list.children, function (item) {
-    return item !== task && Number(item.dataset.created) > created;
+    if (item === task) {
+      return false;
+    }
+    var itemPriority = Number(item.dataset.priority);
+    return itemPriority < priority || (itemPriority === priority && Number(item.dataset.created) > created);
   });
   list.insertBefore(task, next || null);
   refreshSections();

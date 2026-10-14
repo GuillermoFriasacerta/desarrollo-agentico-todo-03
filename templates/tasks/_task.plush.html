@@ -1,4 +1,4 @@
-<li class="task<%= if (t.Completed) { %> task-completed<% } %>" data-created="<%= t.CreatedAt.UnixNano() %>">
+<li class="task<%= if (t.Completed) { %> task-completed<% } %>" data-priority="<%= t.Priority %>" data-created="<%= t.CreatedAt.UnixNano() %>">
   <form action="/tasks/<%= t.ID %>/toggle" method="POST" class="task-toggle" data-task-toggle>
     <input type="hidden" name="authenticity_token" value="<%= authenticity_token %>">
     <input type="hidden" name="_method" value="PUT">
@@ -16,6 +16,9 @@
     </button>
   </form>
   <span class="task-title"><%= t.Title %></span>
+  <%= if (t.PriorityLabel() != "") { %>
+    <span class="task-priority task-priority-<%= t.PriorityClass() %>"><span class="sr-only">Prioridad </span><%= t.PriorityLabel() %></span>
+  <% } %>
   <%= if (t.Completed) { %>
     <span class="task-status">Completada</span>
   <% } %>

@@ -138,7 +138,7 @@ h1 {
 
 .task {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
   align-items: start;
   column-gap: 0.3rem;
   min-height: 61px;
@@ -216,6 +216,7 @@ h1 {
 }
 
 .task-actions {
+  grid-column: 4;
   display: flex;
   align-items: center;
   gap: 0.1rem;
@@ -327,6 +328,52 @@ button:focus-visible,
 input:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 3px;
+}
+
+.task-priority {
+  grid-column: 3;
+  align-self: center;
+  padding: 0.1em 0.55em;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.task-priority-high {
+  color: var(--color-primary);
+  background: #fbeae7;
+}
+
+.task-priority-medium {
+  color: #7a5000;
+  background: #fbf0d9;
+}
+
+.task-priority-low {
+  color: var(--color-muted);
+  background: var(--color-sidebar);
+}
+
+.priority-select {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0.6rem 0.5rem;
+  font: inherit;
+  color: var(--color-text);
+  background: #ffffff;
+  border: 1px solid #92928a;
+  border-radius: 6px;
+}
+
+.edit-task label[for="task-priority"] {
+  margin-top: 1.25rem;
+}
+
+select[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  background: #fff9f7;
 }
 
 .field-hint {

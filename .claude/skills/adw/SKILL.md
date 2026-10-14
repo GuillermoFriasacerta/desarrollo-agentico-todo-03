@@ -71,6 +71,25 @@ Invoca `/implement plans/<plan>.md`. Respeta sus reglas: no rediseñes ni amplí
 
 Ejecuta los tests de Go siempre con `GO_ENV=test`, como hace la CI (`.github/workflows/ci.yaml`): `GO_ENV=test go test -p 1 ./...`. Sin esa variable, la aplicación arranca en modo desarrollo con CSRF activo y los tests de acciones que envían formularios fallan con 403. Si ves 403 inesperados, comprueba `GO_ENV` antes de dar los tests por fallidos.
 
+### Versión de los assets
+
+Si el cambio modifica `public/assets/app.js` o `public/assets/app.css` (compruébalo con `git diff --name-only <remote>/<partida> -- public/assets/`), el parámetro `?v=N` de ese archivo en `templates/application.plush.html` tiene que subir respecto a la rama de partida. Si no, los navegadores que ya tienen la versión anterior en caché siguen ejecutando el JS o CSS antiguo, y el cambio no se ve aunque el servidor sí lo sirva. Si `/implement` no lo ha subido, súbelo tú (`v=N` → `v=N+1`, solo en los archivos modificados) e indícalo en el PR.
+
+### Validación en navegador
+
+Si el cambio afecta a lo que ve el usuario (`templates/` o `public/assets/`), los tests de Go no bastan: no ejecutan JavaScript ni el navegador. Valida en un navegador real:
+
+1. Compila un binario de la rama en el directorio temporal (`go build -o <tmp>/todo-app ./cmd/app`) y arráncalo en segundo plano con `PORT=3001 GO_ENV=development <tmp>/todo-app`. Espera a que `http://localhost:3001/healthz` responda. No toques el contenedor de Docker ni el puerto 3000.
+2. Con un navegador (la skill `playwright-cli` o el navegador integrado), comprueba en `http://localhost:3001/` cada criterio de aceptación observable del plan:
+   - Comprueba también el comportamiento tras recargar.
+   - Comprueba que la página carga la versión nueva de los assets.
+   - Si hay interacción con JavaScript, comprueba también qué pasa cuando la petición falla.
+   - Revisa que la consola no muestre errores.
+3. La base de datos de desarrollo es la del usuario: si cambias datos para probar, déjalos como estaban al terminar.
+4. Para el binario al acabar.
+
+Si no puedes validar en el navegador (no hay herramienta de navegador o falta un permiso), no lo des por bueno en silencio. Indica en el PR y en el informe final que no se ha verificado en el navegador y qué pasos manuales lo comprobarían.
+
 Si `/implement` informa de un bloqueo, o los tests o validaciones del plan fallan, **detente**: no hagas commit ni PR de ese plan, deja la rama tal como está e informa del motivo. No continúes con los planes siguientes.
 
 ## 6. Commit

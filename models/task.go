@@ -93,6 +93,33 @@ func (t Task) PriorityClass() string {
 	return ""
 }
 
+// shortMonths son las abreviaturas en español de los meses, empezando en enero.
+var shortMonths = [...]string{"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"}
+
+// RelativeDate describe en español cuánto hace que ocurrió t respecto a now,
+// contando días naturales en la zona horaria de now.
+func RelativeDate(t, now time.Time) string {
+	t = t.In(now.Location())
+	ty, tm, td := t.Date()
+	ny, nm, nd := now.Date()
+	days := int(time.Date(ny, nm, nd, 0, 0, 0, 0, time.UTC).Sub(time.Date(ty, tm, td, 0, 0, 0, 0, time.UTC)).Hours() / 24)
+
+	switch {
+	case days <= 0:
+		return "hoy"
+	case days == 1:
+		return "ayer"
+	case days < 7:
+		return fmt.Sprintf("hace %d días", days)
+	}
+	return fmt.Sprintf("%d %s %d", td, shortMonths[tm-1], ty)
+}
+
+// CreatedAtISO devuelve la fecha de creación en formato ISO 8601 (RFC 3339, UTC).
+func (t Task) CreatedAtISO() string {
+	return t.CreatedAt.UTC().Format(time.RFC3339)
+}
+
 // Validate se ejecuta en cada llamada a los métodos "pop.Validate*".
 func (t *Task) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	verrs := validate.NewErrors()

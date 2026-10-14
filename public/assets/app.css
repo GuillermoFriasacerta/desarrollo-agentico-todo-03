@@ -147,11 +147,24 @@ h1 {
 }
 
 .task-title {
-  align-self: center;
   min-width: 0;
-  padding: 0.65rem 0;
   overflow-wrap: anywhere;
   line-height: 1.55;
+}
+
+.task-body {
+  grid-column: 2;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.65rem 0;
+}
+
+.task-age {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .task-toggle-button,

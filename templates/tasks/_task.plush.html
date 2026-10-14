@@ -15,7 +15,10 @@
       <span class="toggle-label sr-only"><%= if (t.Completed) { %>Reabrir<% } else { %>Completar<% } %></span>
     </button>
   </form>
-  <span class="task-title"><%= t.Title %></span>
+  <div class="task-body">
+    <span class="task-title"><%= t.Title %></span>
+    <time class="task-age" datetime="<%= t.CreatedAtISO() %>"><%= taskAge(t.CreatedAt) %></time>
+  </div>
   <%= if (t.PriorityLabel() != "") { %>
     <span class="task-priority task-priority-<%= t.PriorityClass() %>"><span class="sr-only">Prioridad </span><%= t.PriorityLabel() %></span>
   <% } %>

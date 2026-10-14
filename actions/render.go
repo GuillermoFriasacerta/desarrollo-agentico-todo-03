@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"time"
+
 	"todo/models"
 	"todo/public"
 	"todo/templates"
@@ -24,6 +26,7 @@ func init() {
 		// Add template helpers here:
 		Helpers: render.Helpers{
 			"priorityOptions": func() []models.PriorityOption { return models.PriorityOptions },
+			"taskAge":         func(t time.Time) string { return models.RelativeDate(t, time.Now()) },
 			// for non-bootstrap form helpers uncomment the lines
 			// below and import "github.com/gobuffalo/helpers/forms"
 			// forms.FormKey:     forms.Form,

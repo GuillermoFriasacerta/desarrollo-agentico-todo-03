@@ -167,6 +167,22 @@ func (as *ActionSuite) Test_TasksIndex_EditLink() {
 	as.Contains(res.Body.String(), "Editar tarea: Título original")
 }
 
+func (as *ActionSuite) Test_TasksIndex_ShowsTaskAge() {
+	task := &models.Task{Title: "Tarea reciente"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+	as.NoError(as.DB.Find(task, task.ID))
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	body := res.Body.String()
+	as.Contains(body, `class="task-age"`)
+	as.Contains(body, `datetime="`+task.CreatedAtISO()+`"`)
+	as.Contains(body, ">hoy</time>")
+}
+
 func (as *ActionSuite) Test_TasksEdit_PrefillsTitle() {
 	task := as.taskForEditing(true)
 	res := as.HTML("/tasks/%s/edit", task.ID).Get()

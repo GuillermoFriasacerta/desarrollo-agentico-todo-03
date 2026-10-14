@@ -9,7 +9,7 @@
   <p class="empty-state">No hay tareas todavía. Añade la primera con el formulario.</p>
 <% } else { %>
   <section aria-labelledby="pending-heading" class="task-section">
-    <h2 id="pending-heading" class="section-heading">Pendientes</h2>
+    <h2 id="pending-heading" class="section-heading">Pendientes (<span data-pending-count><%= len(pendingTasks) %></span>)</h2>
     <p class="empty-state" data-pending-empty <%= if (len(pendingTasks) > 0) { %>hidden<% } %>>No tienes tareas pendientes.</p>
     <ul class="task-list" data-pending-list>
       <%= for (t) in pendingTasks { %><%= partial("tasks/task.plush.html", {t: t}) %><% } %>
@@ -17,7 +17,7 @@
   </section>
 
   <section aria-labelledby="completed-heading" class="task-section" data-completed-section <%= if (len(completedTasks) == 0) { %>hidden<% } %>>
-    <h2 id="completed-heading" class="section-heading">Tareas completadas</h2>
+    <h2 id="completed-heading" class="section-heading">Tareas completadas (<span data-completed-count><%= len(completedTasks) %></span>)</h2>
     <ul class="task-list" data-completed-list>
       <%= for (t) in completedTasks { %><%= partial("tasks/task.plush.html", {t: t}) %><% } %>
     </ul>

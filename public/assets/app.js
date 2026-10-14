@@ -85,4 +85,12 @@ function refreshSections() {
   if (completedSection && completedList) {
     completedSection.hidden = completedList.children.length === 0;
   }
+  var pendingCount = document.querySelector("[data-pending-count]");
+  var completedCount = document.querySelector("[data-completed-count]");
+  if (pendingCount && pendingList) {
+    pendingCount.textContent = String(pendingList.children.length);
+  }
+  if (completedCount && completedList) {
+    completedCount.textContent = String(completedList.children.length);
+  }
 }

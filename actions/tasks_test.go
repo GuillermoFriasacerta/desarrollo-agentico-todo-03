@@ -30,6 +30,9 @@ func (as *ActionSuite) Test_TasksIndex_ListsTasks() {
 	as.Contains(body, "Completada")
 	as.Contains(body, "Pendientes")
 	as.Contains(body, "Tareas completadas")
+	as.Contains(body, `Pendientes (<span data-pending-count>2</span>)`)
+	as.Contains(body, `Tareas completadas (<span data-completed-count>1</span>)`)
+	as.Contains(body, "3 tareas en tu lista")
 	as.NotContains(body, "data-completed-section hidden")
 
 	heading := strings.Index(body, `id="completed-heading"`)
@@ -51,6 +54,8 @@ func (as *ActionSuite) Test_TasksIndex_HidesCompletedSectionWhenNone() {
 	body := res.Body.String()
 	as.Contains(body, "data-completed-section hidden")
 	as.Contains(body, "data-pending-empty hidden")
+	as.Contains(body, "data-pending-count>1<")
+	as.Contains(body, "data-completed-count>0<")
 }
 
 func (as *ActionSuite) Test_TasksIndex_AllCompleted() {
@@ -66,6 +71,28 @@ func (as *ActionSuite) Test_TasksIndex_AllCompleted() {
 	as.Contains(body, "data-pending-empty >No tienes tareas pendientes.")
 	as.NotContains(body, "data-completed-section hidden")
 	as.Greater(strings.Index(body, "Ya terminada"), strings.Index(body, `id="completed-heading"`))
+	as.Contains(body, "data-pending-count>0<")
+	as.Contains(body, "data-completed-count>1<")
+}
+
+func (as *ActionSuite) Test_TasksToggle_UpdatesSectionCounts() {
+	first := &models.Task{Title: "Primera pendiente"}
+	second := &models.Task{Title: "Segunda pendiente"}
+	for _, t := range []*models.Task{first, second} {
+		verrs, err := as.DB.ValidateAndCreate(t)
+		as.NoError(err)
+		as.False(verrs.HasAny())
+	}
+
+	res := as.HTML("/tasks/%s/toggle", first.ID).Put(url.Values{})
+	as.Equal(303, res.Code)
+
+	res = as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	body := res.Body.String()
+	as.Contains(body, "data-pending-count>1<")
+	as.Contains(body, "data-completed-count>1<")
 }
 
 func (as *ActionSuite) Test_TasksCreate_Valid() {

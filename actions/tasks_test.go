@@ -26,6 +26,44 @@ func (as *ActionSuite) Test_TasksIndex_ListsTasks() {
 	as.Contains(body, "Llamar al gestor")
 	as.Contains(body, "Publicar la oferta de empleo")
 	as.Contains(body, "Completada")
+	as.Contains(body, "Pendientes")
+	as.Contains(body, "Tareas completadas")
+	as.NotContains(body, "data-completed-section hidden")
+
+	heading := strings.Index(body, `id="completed-heading"`)
+	as.True(heading > 0)
+	as.Less(strings.Index(body, "Comprar material de oficina"), heading)
+	as.Less(strings.Index(body, "Llamar al gestor"), heading)
+	as.Greater(strings.Index(body, "Publicar la oferta de empleo"), heading)
+}
+
+func (as *ActionSuite) Test_TasksIndex_HidesCompletedSectionWhenNone() {
+	task := &models.Task{Title: "Solo pendiente"}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	body := res.Body.String()
+	as.Contains(body, "data-completed-section hidden")
+	as.Contains(body, "data-pending-empty hidden")
+}
+
+func (as *ActionSuite) Test_TasksIndex_AllCompleted() {
+	task := &models.Task{Title: "Ya terminada", Completed: true}
+	verrs, err := as.DB.ValidateAndCreate(task)
+	as.NoError(err)
+	as.False(verrs.HasAny())
+
+	res := as.HTML("/").Get()
+	as.Equal(200, res.Code)
+
+	body := res.Body.String()
+	as.Contains(body, "data-pending-empty >No tienes tareas pendientes.")
+	as.NotContains(body, "data-completed-section hidden")
+	as.Greater(strings.Index(body, "Ya terminada"), strings.Index(body, `id="completed-heading"`))
 }
 
 func (as *ActionSuite) Test_TasksCreate_Valid() {

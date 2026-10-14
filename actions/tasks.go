@@ -20,13 +20,30 @@ func TasksIndex(c buffalo.Context) error {
 		return err
 	}
 
-	c.Set("tasks", tasks)
+	setTaskLists(c, tasks)
 	c.Set("task", &models.Task{})
 	c.Set("errors", validate.NewErrors())
 	return c.Render(http.StatusOK, r.HTML("tasks/index.plush.html"))
 }
 
 // TasksCreate crea una tarea nueva a partir del formulario.
+// setTaskLists expone la colección completa y sus apartados de pendientes y completadas.
+func setTaskLists(c buffalo.Context, tasks models.Tasks) {
+	pending := models.Tasks{}
+	completed := models.Tasks{}
+	for _, t := range tasks {
+		if t.Completed {
+			completed = append(completed, t)
+		} else {
+			pending = append(pending, t)
+		}
+	}
+
+	c.Set("tasks", tasks)
+	c.Set("pendingTasks", pending)
+	c.Set("completedTasks", completed)
+}
+
 func TasksCreate(c buffalo.Context) error {
 	tx := c.Value("tx").(*pop.Connection)
 
@@ -47,7 +64,7 @@ func TasksCreate(c buffalo.Context) error {
 			return err
 		}
 
-		c.Set("tasks", tasks)
+		setTaskLists(c, tasks)
 		c.Set("task", task)
 		c.Set("errors", verrs)
 		return c.Render(http.StatusUnprocessableEntity, r.HTML("tasks/index.plush.html"))

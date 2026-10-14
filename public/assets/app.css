@@ -119,6 +119,23 @@ h1 {
   list-style: none;
 }
 
+.task-section + .task-section {
+  margin-top: 2rem;
+}
+
+.section-heading {
+  margin-bottom: 0.25rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+[hidden] {
+  display: none !important;
+}
+
 .task {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) auto;

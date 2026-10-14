@@ -12,7 +12,25 @@ document.addEventListener("submit", function (event) {
   event.preventDefault();
 
   var task = form.closest(".task");
-  var completed = task.classList.toggle("task-completed");
+  var completed = !task.classList.contains("task-completed");
+  applyState(task, form, completed);
+
+  fetch(form.action, {
+    method: "POST",
+    body: new URLSearchParams(new FormData(form)),
+    credentials: "same-origin",
+    headers: { "Accept": "text/html" }
+  }).then(function (response) {
+    if (!response.ok) {
+      throw new Error("toggle failed: " + response.status);
+    }
+  }).catch(function () {
+    applyState(task, form, !completed);
+  });
+});
+
+function applyState(task, form, completed) {
+  task.classList.toggle("task-completed", completed);
   var button = form.querySelector("button");
   var status = task.querySelector(".task-status");
 
@@ -30,6 +48,4 @@ document.addEventListener("submit", function (event) {
   } else if (!completed && status) {
     status.remove();
   }
-
-  fetch(form.action);
-});
+}
